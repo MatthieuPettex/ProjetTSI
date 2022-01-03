@@ -13,11 +13,17 @@ GLuint gui_program_id;
 
 camera cam;
 
-const int nb_obj = 3;
+const int nb_Plateforme = 3;
+const int nb_BlocMurHor = 10;
+const int nb_blocMurVert = 5;
+
+
+const int nb_obj = 1 + nb_Plateforme + nb_BlocMurHor* nb_blocMurVert*5;
 objet3d obj[nb_obj];
 
 const int nb_text = 2;
 text text_to_draw[nb_text];
+
 
 
 vec3 vec_directeur = vec3(0.0f,0.0f,-0.5f);
@@ -28,6 +34,10 @@ bool DOWN = false;
 bool LEFT = false;
 bool RIGHT = false;
 bool JUMP = false;
+
+float TaillePersonnage = 1.0f;
+float TaillePlateforme[3] = {3.36856f,0.54522,2.66339};
+float PositionPlateforme[nb_Plateforme*3] = {5.0f,5.0f,5.0f,4.0f,15.0f,6.0f,10.0f,25.0f,2.0f};
 /*****************************************************************************\
 * initialisation                                                              *
 \*****************************************************************************/
@@ -36,14 +46,14 @@ static void init()
   shader_program_id = glhelper::create_program_from_file("shaders/shader.vert", "shaders/shader.frag"); CHECK_GL_ERROR();
 
   cam.projection = matrice_projection(60.0f*M_PI/180.0f,1.0f,0.01f,100.0f);
-  cam.tr.translation = vec3(0.0f, 1.0f, 0.0f);
+  cam.tr.translation = vec3(0.0f, TaillePersonnage, 0.0f);
   //cam.tr.translation = vec3(0.0f, 20.0f, 0.0f);
 
   //cam.tr.rotation_euler = vec3(M_PI/2., 0.0f, 0.0f);
 
-  init_model_1();
-  init_model_2();
-  init_model_3();
+  init_Plateforme();
+  init_Sol();
+  init_Mur();
 
   gui_program_id = glhelper::create_program_from_file("shaders/gui.vert", "shaders/gui.frag"); CHECK_GL_ERROR();
 
@@ -58,6 +68,40 @@ static void init()
   text_to_draw[1].topRight.y = 0.5f;
 }
 
+
+void Collisions() {
+    if (cam.tr.translation.y > 1.0f) {
+        cam.tr.translation.y -= 0.25f;
+    }
+    if (cam.tr.translation.y < 1.0f) {
+
+        cam.tr.translation.y = 1.0f;
+    }
+    for (int i = 1; i < nb_Plateforme + nb_BlocMurHor*nb_blocMurVert*5 +  1; i++) {
+        if (i < nb_Plateforme + 1) {
+            if (cam.tr.translation.x > obj[i].tr.translation.x - TaillePlateforme[0] && cam.tr.translation.x < obj[i].tr.translation.x + TaillePlateforme[0] && cam.tr.translation.z > obj[i].tr.translation.z - TaillePlateforme[2] && cam.tr.translation.z < obj[i].tr.translation.z + TaillePlateforme[2]) {
+                if (cam.tr.translation.y < obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage && cam.tr.translation.y > obj[i].tr.translation.y + TaillePlateforme[1]) {
+                    cam.tr.translation.y = obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage;
+                }
+                if (cam.tr.translation.y > obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage && cam.tr.translation.y < obj[i].tr.translation.y) {
+                    cam.tr.translation.y = obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage;
+                }
+            }
+        }
+        else {
+            printf("Nombre : %d , Mur en X : %f\n", i, obj[i].tr.translation.x);
+            if (cam.tr.translation.y < obj[i].tr.translation.y + 10/2  && cam.tr.translation.y > obj[i].tr.translation.y - 10/2) {
+           
+                if (cam.tr.translation.x < obj[i].tr.translation.x - 10/2){
+                    cam.tr.translation.x = obj[i].tr.translation.x - 10/2;
+                    
+                    }
+            }
+        }
+      
+    }
+
+}
 /*****************************************************************************\
 * display_callback                                                           *
 \*****************************************************************************/
@@ -66,14 +110,12 @@ static void init()
   glClearColor(0.5f, 0.6f, 0.9f, 1.0f); CHECK_GL_ERROR();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); CHECK_GL_ERROR();
 
-  for(int i = 0; i < nb_obj; ++i)
+  for(int i = 0; i < 1 + nb_Plateforme + nb_BlocMurHor * nb_blocMurVert*5; ++i)
     draw_obj3d(obj + i, cam);
 
   for(int i = 0; i < nb_text; ++i)
     draw_text(text_to_draw + i);
-  if (cam.tr.translation.y < 1.0f) {
-      cam.tr.translation.y = 1.0f;
-  }
+ 
   if (UP == true){
     cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) *matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeur;
   }
@@ -151,8 +193,8 @@ static void keyboard_callbackUp(unsigned char key, int,int)
 
 
 void look (int x, int y) {
-  GLfloat deltaX = 300 - x;
-  GLfloat deltaY = 300 - y;
+  GLfloat deltaX = 1280 / 2 - x;
+  GLfloat deltaY = 960 / 2 - y;
 
   cam.tr.rotation_euler.x -= deltaY / 2000;
 
@@ -172,11 +214,8 @@ static void special_callback(int key, int, int)
 \*****************************************************************************/
 static void timer_callback(int)
 {
-  glutWarpPointer(600/2,600/2);
-  if (cam.tr.translation.y>1.0f){
-    cam.tr.translation.y-=0.25f;
-  }
-  
+  glutWarpPointer(1280/2,960/2);
+  Collisions();
   glutTimerFunc(25, timer_callback, 0);
   glutPostRedisplay();
 }
@@ -188,10 +227,10 @@ int main(int argc, char** argv)
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | MACOSX_COMPATIBILITY);
-  glutInitWindowSize(600, 600);
+  glutInitWindowSize(1280, 960);
   glutCreateWindow("OpenGL");
 
- 
+  
   glutDisplayFunc(display_callback);
   glutKeyboardFunc(keyboard_callback);
   glutSpecialFunc(special_callback);
@@ -360,36 +399,38 @@ GLuint upload_mesh_to_gpu(const mesh& m)
   return vao;
 }
 
-void init_model_1()
+void init_Plateforme()
 {
-  // Chargement d'un maillage a partir d'un fichier
-  mesh m = load_obj_file("data/Plateforme.obj");
+    for (int i = 0; i < nb_Plateforme; i++) {
+        // Chargement d'un maillage a partir d'un fichier
+        mesh m = load_obj_file("data/Bloc.obj");
 
-  // Affecte une transformation sur les sommets du maillage
-  float s = 1.0f;
-  mat4 transform = mat4(   s, 0.0f, 0.0f, 0.0f,
-      0.0f, 1.0f , 0.0f, 0.0f,
-      0.0f, 0.0f,   s , 0.0f,
-      0.0f, 0.0f, 0.0f, 1.0f);
-  apply_deformation(&m,transform);
+        // Affecte une transformation sur les sommets du maillage
+        float s = 10.0f;
+        mat4 transform = mat4(TaillePlateforme[0], 0.0f, 0.0f, 0.0f,
+            0.0f, TaillePlateforme[1], 0.0f, 0.0f,
+            0.0f, 0.0f, TaillePlateforme[2], 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f);
+        apply_deformation(&m, transform);
 
-  // Centre la rotation du modele 1 autour de son centre de gravite approximatif
-  obj[0].tr.rotation_center = vec3(0.0f,0.0f,0.0f);
+        // Centre la rotation du modele 1 autour de son centre de gravite approximatif
+        obj[i+1].tr.rotation_center = vec3(0.0f, 0.0f, 0.0f);
 
-  update_normals(&m);
-  fill_color(&m,vec3(1.0f,1.0f,1.0f));
+        update_normals(&m);
+        fill_color(&m, vec3(1.0f, 1.0f, 1.0f));
 
-  obj[0].vao = upload_mesh_to_gpu(m);
+        obj[i+1].vao = upload_mesh_to_gpu(m);
 
-  obj[0].nb_triangle = m.connectivity.size();
-  obj[0].texture_id = glhelper::load_texture("data/SolPlateforme.tga");
-  obj[0].visible = true;
-  obj[0].prog = shader_program_id;
-
-  obj[0].tr.translation = vec3(-2.0, 0.0, -10.0);
+        obj[i+1].nb_triangle = m.connectivity.size();
+        obj[i+1].texture_id = glhelper::load_texture("data/SolPlateforme.tga");
+        obj[i+1].visible = true;
+        obj[i+1].prog = shader_program_id;
+        obj[i+1].tr.translation = vec3(PositionPlateforme[i*3], PositionPlateforme[i*3+1], PositionPlateforme[i*3+2]);
+  }
+ 
 }
 
-void init_model_2()
+void init_Sol()
 {
 
   mesh m;
@@ -430,41 +471,56 @@ void init_model_2()
   triangle_index tri1=triangle_index(0,2,3);  
   m.connectivity = {tri0, tri1};
 
-  obj[1].nb_triangle = 2;
-  obj[1].vao = upload_mesh_to_gpu(m);
+  obj[0].nb_triangle = 2;
+  obj[0].vao = upload_mesh_to_gpu(m);
 
-  obj[1].texture_id = glhelper::load_texture("data/grass.tga");
+  obj[0].texture_id = glhelper::load_texture("data/grass.tga");
 
-  obj[1].visible = true;
-  obj[1].prog = shader_program_id;
+  obj[0].visible = true;
+  obj[0].prog = shader_program_id;
+
+ 
 }
 
 
-void init_model_3()
+void init_Mur()
 {
-  // Chargement d'un maillage a partir d'un fichier
-  mesh m = load_off_file("data/armadillo_light.off");
+    int n = 0;
+    float Rotation[4] = {0,M_PI/2,M_PI,3*M_PI/2};
+    float PosMur[4 * 2] = {0.0f,1.0f,1.0f,0.0f,0.0f,1.0f,1.0f,0.0f};
+    float DecalageMur[4 * 2] = {110.0f,0.0f,0.0f,-110.0f,-110.0f,0.0f,0.0f,110.0f};
+    for (int k = 0; k < 4; k++) {
+        for (int i = -nb_BlocMurHor / 2; i < nb_BlocMurHor / 2+1; i++) {
+            for (int j = 1; j < nb_blocMurVert + 1; j++) {
+                // Chargement d'un maillage a partir d'un fichier
+                mesh m = load_obj_file("data/Bloc.obj");
 
-  // Affecte une transformation sur les sommets du maillage
-  float s = 0.01f;
-  mat4 transform = mat4(   s, 0.0f, 0.0f, 0.0f,
-      0.0f,    s, 0.0f, 0.50f,
-      0.0f, 0.0f,   s , 0.0f,
-      0.0f, 0.0f, 0.0f, 1.0f);
-  apply_deformation(&m,matrice_rotation(M_PI/2.0f,1.0f,0.0f,0.0f));
-  apply_deformation(&m,matrice_rotation(M_PI,0.0f,1.0f,0.0f));
-  apply_deformation(&m,transform);
+                // Affecte une transformation sur les sommets du maillage
+                float s = 10.0f;
+                mat4 transform = mat4(1.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, s, 0.0f, 0.0f,
+                    0.0f, 0.0f, s, 0.0f,
+                    0.0f, 0.0f, 0.0f, 1.0f);
+                apply_deformation(&m, transform);
 
-  update_normals(&m);
-  fill_color(&m,vec3(1.0f,1.0f,1.0f));
+                // Centre la rotation du modele 1 autour de son centre de gravite approximatif
+                obj[n + 1 + nb_Plateforme].tr.rotation_euler = vec3(0.0f, Rotation[k], 0.0f);
+                update_normals(&m);
+                fill_color(&m, vec3(1.0f, 1.0f, 1.0f));
 
-  obj[2].vao = upload_mesh_to_gpu(m);
+                obj[n + 1 + nb_Plateforme].vao = upload_mesh_to_gpu(m);
 
-  obj[2].nb_triangle = m.connectivity.size();
-  obj[2].texture_id = glhelper::load_texture("data/white.tga");
+                obj[n + 1 + nb_Plateforme].nb_triangle = m.connectivity.size();
+                obj[n + 1 + nb_Plateforme].texture_id = glhelper::load_texture("data/white.tga");
+                obj[n + 1 + nb_Plateforme].visible = true;
+                obj[n + 1 + nb_Plateforme].prog = shader_program_id;
+                obj[n + 1 + nb_Plateforme].tr.translation = vec3((2 * s * i) * PosMur[2 * k ]+ DecalageMur[2 * k ], 2 * s * j - s, (2 * s * i)*PosMur[2*k+1]+ DecalageMur[2*k+1]);
+                n++;
+            }
 
-  obj[2].visible = true;
-  obj[2].prog = shader_program_id;
-
-  obj[2].tr.translation = vec3(2.0, 0.0, -10.0);
+        }
+    }
+    
 }
+
+

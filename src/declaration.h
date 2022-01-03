@@ -67,9 +67,10 @@ struct text : public objet
 void init_text(text *t);
 void draw_text(const text* const t);
 
+void Collisions();
 
-void init_model_1();
-void init_model_2();
-void init_model_3();
+void init_Plateforme();
+void init_Sol();
+void init_Mur();
 
 void draw_obj3d(const objet3d* const obj, camera cam);

@@ -18,7 +18,7 @@ const int nb_BlocMurHor = 10;
 const int nb_blocMurVert = 5;
 
 
-const int nb_obj = 1 + nb_Plateforme + nb_BlocMurHor* nb_blocMurVert*5;
+const int nb_obj = 1 + nb_Plateforme + (nb_BlocMurHor + 1) *nb_blocMurVert * 4;
 objet3d obj[nb_obj];
 
 const int nb_text = 2;
@@ -77,28 +77,35 @@ void Collisions() {
 
         cam.tr.translation.y = 1.0f;
     }
-    for (int i = 1; i < nb_Plateforme + nb_BlocMurHor*nb_blocMurVert*5 +  1; i++) {
-        if (i < nb_Plateforme + 1) {
-            if (cam.tr.translation.x > obj[i].tr.translation.x - TaillePlateforme[0] && cam.tr.translation.x < obj[i].tr.translation.x + TaillePlateforme[0] && cam.tr.translation.z > obj[i].tr.translation.z - TaillePlateforme[2] && cam.tr.translation.z < obj[i].tr.translation.z + TaillePlateforme[2]) {
-                if (cam.tr.translation.y < obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage && cam.tr.translation.y > obj[i].tr.translation.y + TaillePlateforme[1]) {
-                    cam.tr.translation.y = obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage;
-                }
-                if (cam.tr.translation.y > obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage && cam.tr.translation.y < obj[i].tr.translation.y) {
-                    cam.tr.translation.y = obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage;
-                }
+    if (cam.tr.translation.x > 10 * (nb_BlocMurHor + 1) - 1.5f) {
+
+        cam.tr.translation.x = 10 * (nb_BlocMurHor + 1) - 1.5f;
+
+    }
+    if (cam.tr.translation.x < -10 * (nb_BlocMurHor + 1) + 1.5f) {
+
+        cam.tr.translation.x = -10 * (nb_BlocMurHor + 1) + 1.5f;
+
+    }
+    if (cam.tr.translation.z > 10 * (nb_BlocMurHor + 1) - 1.5f) {
+
+        cam.tr.translation.z = 10 * (nb_BlocMurHor + 1) - 1.5f;
+
+    }
+    if (cam.tr.translation.z < -10 * (nb_BlocMurHor + 1) + 1.5f) {
+
+        cam.tr.translation.z = -10 * (nb_BlocMurHor + 1) + 1.5f;
+
+    }
+    for (int i = 1; i < nb_Plateforme +1; i++) {
+        if (cam.tr.translation.x > obj[i].tr.translation.x - TaillePlateforme[0] && cam.tr.translation.x < obj[i].tr.translation.x + TaillePlateforme[0] && cam.tr.translation.z > obj[i].tr.translation.z - TaillePlateforme[2] && cam.tr.translation.z < obj[i].tr.translation.z + TaillePlateforme[2]) {
+            if (cam.tr.translation.y < obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage && cam.tr.translation.y > obj[i].tr.translation.y + TaillePlateforme[1]) {
+                cam.tr.translation.y = obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage;
             }
-        }
-        else {
-            printf("Nombre : %d , Mur en X : %f\n", i, obj[i].tr.translation.x);
-            if (cam.tr.translation.y < obj[i].tr.translation.y + 10/2  && cam.tr.translation.y > obj[i].tr.translation.y - 10/2) {
-           
-                if (cam.tr.translation.x < obj[i].tr.translation.x - 10/2){
-                    cam.tr.translation.x = obj[i].tr.translation.x - 10/2;
-                    
-                    }
+            if (cam.tr.translation.y > obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage && cam.tr.translation.y < obj[i].tr.translation.y) {
+                cam.tr.translation.y = obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage;
             }
-        }
-      
+        }    
     }
 
 }
@@ -110,7 +117,7 @@ void Collisions() {
   glClearColor(0.5f, 0.6f, 0.9f, 1.0f); CHECK_GL_ERROR();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); CHECK_GL_ERROR();
 
-  for(int i = 0; i < 1 + nb_Plateforme + nb_BlocMurHor * nb_blocMurVert*5; ++i)
+  for(int i = 0; i < 1 + nb_Plateforme + (nb_BlocMurHor+1) * nb_blocMurVert*4; ++i)
     draw_obj3d(obj + i, cam);
 
   for(int i = 0; i < nb_text; ++i)
@@ -515,6 +522,7 @@ void init_Mur()
                 obj[n + 1 + nb_Plateforme].visible = true;
                 obj[n + 1 + nb_Plateforme].prog = shader_program_id;
                 obj[n + 1 + nb_Plateforme].tr.translation = vec3((2 * s * i) * PosMur[2 * k ]+ DecalageMur[2 * k ], 2 * s * j - s, (2 * s * i)*PosMur[2*k+1]+ DecalageMur[2*k+1]);
+                printf("X : %f \n", (2 * s * i) * PosMur[2 * k] + DecalageMur[2 * k]);
                 n++;
             }
 

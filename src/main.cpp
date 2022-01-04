@@ -122,18 +122,26 @@ void Collisions() {
 
   for(int i = 0; i < nb_text; ++i)
     draw_text(text_to_draw + i);
- 
+  float MemoireY;
   if (UP == true){
+    MemoireY = cam.tr.translation.y;
     cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) *matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeur;
+    cam.tr.translation.y = MemoireY;
   }
   if (DOWN == true){
-    cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeur;
+      MemoireY = cam.tr.translation.y;
+      cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeur;
+      cam.tr.translation.y = MemoireY;
   }
   if (RIGHT == true){
-    cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeurlat;
+      MemoireY = cam.tr.translation.y;
+      cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeurlat;
+      cam.tr.translation.y = MemoireY;
   }
   if (LEFT == true){
-    cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeurlat;
+      MemoireY = cam.tr.translation.y;
+      cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeurlat;
+      cam.tr.translation.y = MemoireY;
   }
   if (JUMP == true){
     cam.tr.translation.y += 2.0f;
@@ -493,6 +501,7 @@ void init_Sol()
 void init_Mur()
 {
     int n = 0;
+    float s = 10.0f;
     float Rotation[4] = {0,M_PI/2,M_PI,3*M_PI/2};
     float PosMur[4 * 2] = {0.0f,1.0f,1.0f,0.0f,0.0f,1.0f,1.0f,0.0f};
     float DecalageMur[4 * 2] = {110.0f,0.0f,0.0f,-110.0f,-110.0f,0.0f,0.0f,110.0f};
@@ -503,7 +512,6 @@ void init_Mur()
                 mesh m = load_obj_file("data/Bloc.obj");
 
                 // Affecte une transformation sur les sommets du maillage
-                float s = 10.0f;
                 mat4 transform = mat4(1.0f, 0.0f, 0.0f, 0.0f,
                     0.0f, s, 0.0f, 0.0f,
                     0.0f, 0.0f, s, 0.0f,

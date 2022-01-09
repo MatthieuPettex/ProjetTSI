@@ -22,7 +22,7 @@ const int nb_blocMurVert = 5;
 const int nb_obj = 1 + nb_Plateforme + (nb_BlocMurHor + 1) *nb_blocMurVert * 4;
 objet3d obj[nb_obj];
 
-const int nb_text = 10;
+const int nb_text = 4;
 text text_to_draw[nb_text];
 
 
@@ -55,6 +55,9 @@ float Deplac4 = -0.2f;
 float Deplac6 = -0.1f;
 float Deplac7 = 0.1f;
 
+bool Victoire = false;
+bool Defaite = false;
+
 /*****************************************************************************\
 * initialisation                                                              *
 \*****************************************************************************/
@@ -85,6 +88,19 @@ static void init()
   text_to_draw[1].value = tempsBuffer;
   text_to_draw[1].bottomLeft = vec2(-0.2, 0.5);
   text_to_draw[1].topRight = vec2(0.2, 1);
+  init_text(text_to_draw + 1);
+
+  text_to_draw[2].value = "VICTOIRE";
+  text_to_draw[2].bottomLeft = vec2(-0.2, 0.5);
+  text_to_draw[2].topRight = vec2(0.2, 1);
+  init_text(text_to_draw+2);
+  text_to_draw[2].visible = false;
+
+  text_to_draw[3].value = "DEFAITE";
+  text_to_draw[3].bottomLeft = vec2(-0.2, 0.5);
+  text_to_draw[3].topRight = vec2(0.2, 1);
+  init_text(text_to_draw + 3);
+  text_to_draw[3].visible = false;
 }
 
 
@@ -126,6 +142,9 @@ void Collisions() {
                 if (i == 7) {
                     cam.tr.translation.z += Deplac7;
                 }
+                if (i == 12) {
+                    Victoire = true;
+                }
             }
             if (cam.tr.translation.y > obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage && cam.tr.translation.y < obj[i].tr.translation.y) {
                 cam.tr.translation.y = obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage;
@@ -148,32 +167,47 @@ void Collisions() {
 
   for(int i = 0; i < nb_text; ++i)
     draw_text(text_to_draw + i);
-  float MemoireY;
-  if (UP == true){
-    MemoireY = cam.tr.translation.y;
-    cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) *matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeur;
-    cam.tr.translation.y = MemoireY;
+
+  if (Victoire == false && Defaite == false) {
+      float MemoireY;
+      if (UP == true) {
+          MemoireY = cam.tr.translation.y;
+          cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x, 1.0f, 0.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z, 0.0f, 0.0f, 1.0f) * vec_directeur;
+          cam.tr.translation.y = MemoireY;
+      }
+      if (DOWN == true) {
+          MemoireY = cam.tr.translation.y;
+          cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x, 1.0f, 0.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z, 0.0f, 0.0f, 1.0f) * vec_directeur;
+          cam.tr.translation.y = MemoireY;
+      }
+      if (RIGHT == true) {
+          MemoireY = cam.tr.translation.y;
+          cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x, 1.0f, 0.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z, 0.0f, 0.0f, 1.0f) * vec_directeurlat;
+          cam.tr.translation.y = MemoireY;
+      }
+      if (LEFT == true) {
+          MemoireY = cam.tr.translation.y;
+          cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x, 1.0f, 0.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z, 0.0f, 0.0f, 1.0f) * vec_directeurlat;
+          cam.tr.translation.y = MemoireY;
+      }
+      if ((JUMP == true) && (jumpcount == hauteursaut / forcegravitation)) {
+          airborntimer = hauteursaut / (0.5f - forcegravitation);
+          jumpcount = 0.0f;
+      }
+      cam.tr.rotation_center = cam.tr.translation;
+    
   }
-  if (DOWN == true){
-      MemoireY = cam.tr.translation.y;
-      cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeur;
-      cam.tr.translation.y = MemoireY;
+  else if (Victoire == true) {
+        text_to_draw[0].visible = false;
+        text_to_draw[1].visible = false;
+        text_to_draw[2].visible = true;
   }
-  if (RIGHT == true){
-      MemoireY = cam.tr.translation.y;
-      cam.tr.translation -= matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeurlat;
-      cam.tr.translation.y = MemoireY;
+
+  else if (Defaite == true) {
+      text_to_draw[0].visible = false;
+      text_to_draw[1].visible = false;
+      text_to_draw[3].visible = true;
   }
-  if (LEFT == true){
-      MemoireY = cam.tr.translation.y;
-      cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeurlat;
-      cam.tr.translation.y = MemoireY;
-  }
-  if ((JUMP == true) && (jumpcount == hauteursaut / forcegravitation)) {
-      airborntimer = hauteursaut / (0.5f - forcegravitation);
-      jumpcount = 0.0f;
-  }
-  cam.tr.rotation_center = cam.tr.translation;
   glutSwapBuffers();
 }
 
@@ -263,6 +297,7 @@ static void timer_callback(int)
 
   DeplacementPlateforme();
 
+
   if (jumpcount < hauteursaut / forcegravitation) {
       jumpcount += 1.0f;
       //printf("\n %f", jumpcount);
@@ -293,7 +328,10 @@ static void timer_callback(int)
   }
   if (timervalue == 0) {
       PAUSE = true;
+      Defaite = true;
   }
+
+
 
 }
 

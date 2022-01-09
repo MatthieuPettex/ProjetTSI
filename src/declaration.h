@@ -68,6 +68,7 @@ void init_text(text *t);
 void draw_text(const text* const t);
 
 void Collisions();
+void DeplacementPlateforme();
 
 void init_Plateforme();
 void init_Sol();

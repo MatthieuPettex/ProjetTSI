@@ -13,7 +13,8 @@ GLuint gui_program_id;
 
 camera cam;
 
-const int nb_Plateforme = 3;
+
+const int nb_Plateforme = 12;
 const int nb_BlocMurHor = 10;
 const int nb_blocMurVert = 5;
 
@@ -21,9 +22,16 @@ const int nb_blocMurVert = 5;
 const int nb_obj = 1 + nb_Plateforme + (nb_BlocMurHor + 1) *nb_blocMurVert * 4;
 objet3d obj[nb_obj];
 
-const int nb_text = 2;
+const int nb_text = 10;
 text text_to_draw[nb_text];
 
+
+const float forcegravitation = 0.10f;
+const float hauteursaut = 10.0f;
+float jumpcount = (hauteursaut / forcegravitation);
+float airborntimer = 0.0f;
+int timervalue = 20;
+int buffersecondes = 0;
 
 
 vec3 vec_directeur = vec3(0.0f,0.0f,-0.5f);
@@ -34,10 +42,19 @@ bool DOWN = false;
 bool LEFT = false;
 bool RIGHT = false;
 bool JUMP = false;
+bool AIRBORN = false;
+bool PAUSE = false;
+
+
 
 float TaillePersonnage = 1.0f;
-float TaillePlateforme[3] = {3.36856f,0.54522,2.66339};
-float PositionPlateforme[nb_Plateforme*3] = {5.0f,5.0f,5.0f,4.0f,15.0f,6.0f,10.0f,25.0f,2.0f};
+float TaillePlateforme[3] = {3.35f,0.54,2.66};
+float PositionPlateforme[nb_Plateforme * 3] = { 90.0f,6.0f,90.0f, 80.0f,10.0f,89.0f, 87.0f,14.0f,76.0f, 75.0f,26.0f,71.0f, 70.0f,35.0f,60.0f, 70.0f,35.0f,40.0f, 60.0f,35.0f,40.0f, 51.0f,42.0f,30.0f, 40.0f,49.0f,25.0f, 20.0f,53.0f,15.0f, 10.0f,58.0f,5.0f, 0.0f,65.0f,0.0f };
+
+float Deplac4 = -0.2f;
+float Deplac6 = -0.1f;
+float Deplac7 = 0.1f;
+
 /*****************************************************************************\
 * initialisation                                                              *
 \*****************************************************************************/
@@ -46,7 +63,7 @@ static void init()
   shader_program_id = glhelper::create_program_from_file("shaders/shader.vert", "shaders/shader.frag"); CHECK_GL_ERROR();
 
   cam.projection = matrice_projection(60.0f*M_PI/180.0f,1.0f,0.01f,100.0f);
-  cam.tr.translation = vec3(0.0f, TaillePersonnage, 0.0f);
+  cam.tr.translation = vec3(95.0f, TaillePersonnage, 95.0f);
   //cam.tr.translation = vec3(0.0f, 20.0f, 0.0f);
 
   //cam.tr.rotation_euler = vec3(M_PI/2., 0.0f, 0.0f);
@@ -57,21 +74,23 @@ static void init()
 
   gui_program_id = glhelper::create_program_from_file("shaders/gui.vert", "shaders/gui.frag"); CHECK_GL_ERROR();
 
-  text_to_draw[0].value = "CPE";
+  text_to_draw[0].value = "TIMER";
   text_to_draw[0].bottomLeft = vec2(-0.2, 0.5);
   text_to_draw[0].topRight = vec2(0.2, 1);
   init_text(text_to_draw);
 
-  text_to_draw[1]=text_to_draw[0];
-  text_to_draw[1].value = "Lyon";
-  text_to_draw[1].bottomLeft.y = 0.0f;
-  text_to_draw[1].topRight.y = 0.5f;
+  char tempsBuffer[10];
+  sprintf(tempsBuffer, "%i", timervalue);
+  text_to_draw[1] = text_to_draw[0];
+  text_to_draw[1].value = tempsBuffer;
+  text_to_draw[1].bottomLeft = vec2(-0.2, 0.5);
+  text_to_draw[1].topRight = vec2(0.2, 1);
 }
 
 
 void Collisions() {
     if (cam.tr.translation.y > 1.0f) {
-        cam.tr.translation.y -= 0.25f;
+        cam.tr.translation.y -= forcegravitation;
     }
     if (cam.tr.translation.y < 1.0f) {
 
@@ -101,11 +120,18 @@ void Collisions() {
         if (cam.tr.translation.x > obj[i].tr.translation.x - TaillePlateforme[0] && cam.tr.translation.x < obj[i].tr.translation.x + TaillePlateforme[0] && cam.tr.translation.z > obj[i].tr.translation.z - TaillePlateforme[2] && cam.tr.translation.z < obj[i].tr.translation.z + TaillePlateforme[2]) {
             if (cam.tr.translation.y < obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage && cam.tr.translation.y > obj[i].tr.translation.y + TaillePlateforme[1]) {
                 cam.tr.translation.y = obj[i].tr.translation.y + TaillePlateforme[1] + TaillePersonnage;
+                if (i == 6) {
+                    cam.tr.translation.z += Deplac6;
+                }
+                if (i == 7) {
+                    cam.tr.translation.z += Deplac7;
+                }
             }
             if (cam.tr.translation.y > obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage && cam.tr.translation.y < obj[i].tr.translation.y) {
                 cam.tr.translation.y = obj[i].tr.translation.y - TaillePlateforme[1] - TaillePersonnage;
             }
-        }    
+        }
+       
     }
 
 }
@@ -143,8 +169,9 @@ void Collisions() {
       cam.tr.translation += matrice_rotation(cam.tr.rotation_euler.x,1.0f,0.0f,0.0f)* matrice_rotation(cam.tr.rotation_euler.y, 0.0f, -1.0f, 0.0f) * matrice_rotation(cam.tr.rotation_euler.z,0.0f,0.0f,1.0f)*vec_directeurlat;
       cam.tr.translation.y = MemoireY;
   }
-  if (JUMP == true){
-    cam.tr.translation.y += 2.0f;
+  if ((JUMP == true) && (jumpcount == hauteursaut / forcegravitation)) {
+      airborntimer = hauteursaut / (0.5f - forcegravitation);
+      jumpcount = 0.0f;
   }
   cam.tr.rotation_center = cam.tr.translation;
   glutSwapBuffers();
@@ -233,6 +260,41 @@ static void timer_callback(int)
   Collisions();
   glutTimerFunc(25, timer_callback, 0);
   glutPostRedisplay();
+
+  DeplacementPlateforme();
+
+  if (jumpcount < hauteursaut / forcegravitation) {
+      jumpcount += 1.0f;
+      //printf("\n %f", jumpcount);
+  }
+  //printf("\n %f", airborntimer);
+  if (airborntimer > hauteursaut * 0.5f) {
+      AIRBORN = true;
+      airborntimer -= 1.0f;
+  }
+  else {
+      AIRBORN = false;
+  }
+  if (AIRBORN == true) {
+      cam.tr.translation.y += 0.5f;
+  }
+  //printf("\n %f", cam.tr.translation.y);
+  buffersecondes += 1;
+  if (buffersecondes == 40) {
+      buffersecondes = 0;
+      timervalue -= 1;
+      //printf("\n %i", timervalue);
+      char tempsBuffer[10];
+      sprintf(tempsBuffer, "%i", timervalue);
+      text_to_draw[1] = text_to_draw[0];
+      text_to_draw[1].value = tempsBuffer;
+      text_to_draw[1].bottomLeft = vec2(-0.2, 0.5);
+      text_to_draw[1].topRight = vec2(0.2, 1);
+  }
+  if (timervalue == 0) {
+      PAUSE = true;
+  }
+
 }
 
 /*****************************************************************************\
@@ -421,7 +483,6 @@ void init_Plateforme()
         mesh m = load_obj_file("data/Bloc.obj");
 
         // Affecte une transformation sur les sommets du maillage
-        float s = 10.0f;
         mat4 transform = mat4(TaillePlateforme[0], 0.0f, 0.0f, 0.0f,
             0.0f, TaillePlateforme[1], 0.0f, 0.0f,
             0.0f, 0.0f, TaillePlateforme[2], 0.0f,
@@ -489,7 +550,7 @@ void init_Sol()
   obj[0].nb_triangle = 2;
   obj[0].vao = upload_mesh_to_gpu(m);
 
-  obj[0].texture_id = glhelper::load_texture("data/grass.tga");
+  obj[0].texture_id = glhelper::load_texture("data/Sol.tga");
 
   obj[0].visible = true;
   obj[0].prog = shader_program_id;
@@ -530,13 +591,43 @@ void init_Mur()
                 obj[n + 1 + nb_Plateforme].visible = true;
                 obj[n + 1 + nb_Plateforme].prog = shader_program_id;
                 obj[n + 1 + nb_Plateforme].tr.translation = vec3((2 * s * i) * PosMur[2 * k ]+ DecalageMur[2 * k ], 2 * s * j - s, (2 * s * i)*PosMur[2*k+1]+ DecalageMur[2*k+1]);
-                printf("X : %f \n", (2 * s * i) * PosMur[2 * k] + DecalageMur[2 * k]);
+                //printf("X : %f \n", (2 * s * i) * PosMur[2 * k] + DecalageMur[2 * k]);
                 n++;
             }
 
         }
     }
     
+}
+
+void DeplacementPlateforme() {
+    //4 14 -> 35
+    
+    obj[4].tr.translation.y += Deplac4;
+    if (obj[4].tr.translation.y < 14.0f) {
+        Deplac4 = 0.2f;
+    }
+    if (obj[4].tr.translation.y > 35.0f) {
+        Deplac4 = -0.2f;
+    }
+
+    obj[6].tr.translation.z += Deplac6;
+    if (obj[6].tr.translation.z < 40.0f) {
+        Deplac6 = 0.1f;
+    }
+    if (obj[6].tr.translation.z > 50.0f) {
+        Deplac6 = -0.1f;
+    }
+
+    obj[7].tr.translation.z += Deplac7;
+    if (obj[7].tr.translation.z < 30.0f) {
+        Deplac7 = 0.1f;
+    }
+    if (obj[7].tr.translation.z > 40.0f) {
+        Deplac7 = -0.1f;
+    }
+
+
 }
 
 
